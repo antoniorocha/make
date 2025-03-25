@@ -17,9 +17,14 @@ def merge_images():
             return "JSON inválido ou faltando url1/url2", 400
         url1 = data['url1']
         url2 = data['url2']
-        app.logger.debug(f"URL1: {url1}, URL2: {url2}")
-        img1 = Image.open(BytesIO(requests.get(url1).content))
-        img2 = Image.open(BytesIO(requests.get(url2).content))
+        app.logger.debug(f"Tentando baixar URL1: {url1}, URL2: {url2}")
+        response1 = requests.get(url1)
+        response2 = requests.get(url2)
+        if response1.status_code != 200 or response2.status_code != 200:
+            app.logger.error(f"Erro ao baixar imagens: URL1={response1.status_code}, URL2={response2.status_code}")
+            return f"Erro ao baixar imagens: URL1={response1.status_code}, URL2={response2.status_code}", 400
+        img1 = Image.open(BytesIO(response1.content))
+        img2 = Image.open(BytesIO(response2.content))
         width = img1.width + img2.width
         height = max(img1.height, img2.height)
         merged = Image.new('RGB', (width, height))
@@ -28,9 +33,10 @@ def merge_images():
         buffer = BytesIO()
         merged.save(buffer, format='JPEG')
         buffer.seek(0)
+        app.logger.debug("Imagem mesclada com sucesso")
         return send_file(buffer, mimetype='image/jpeg', as_attachment=True, download_name='merged.jpg')
     except Exception as e:
-        app.logger.error(f"Erro: {str(e)}")
+        app.logger.error(f"Erro no processamento: {str(e)}")
         return f"Erro: {str(e)}", 400
 
 if __name__ == '__main__':
