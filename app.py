@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, send_file
 from PIL import Image
 import requests
 from io import BytesIO
@@ -16,7 +16,10 @@ def merge_images():
     merged = Image.new('RGB', (width, height))
     merged.paste(img1, (0, 0))
     merged.paste(img2, (img1.width, 0))
-    merged.save('merged.jpg')
-    return {'url': 'http://[seu-replit-url]/merged.jpg'}
+    buffer = BytesIO()
+    merged.save(buffer, format='JPEG')
+    buffer.seek(0)
+    return send_file(buffer, mimetype='image/jpeg', as_attachment=True, download_name='merged.jpg')
 
-app.run(host='0.0.0.0')
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
